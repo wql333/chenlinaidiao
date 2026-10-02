@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>陈力奶钓 · 钓鱼记录</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="陈力奶钓">
+<meta name="theme-color" content="#0a3d73">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; }
+  body {
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:#dfeaf3; color:#1c2b3a;
+  }
+  #app {
+    max-width:520px; margin:0 auto; min-height:100vh; min-height:100dvh;
+    background:#eef4f9; position:relative; box-shadow:0 0 40px rgba(10,61,115,.18);
+    padding-bottom:calc(76px + env(safe-area-inset-bottom));
+  }
+
+  /* ===== 顶部 ===== */
+  header {
+    background:linear-gradient(135deg,#0a3d73 0%,#1173c4 100%);
+    padding:calc(14px + env(safe-area-inset-top)) 18px 74px;
+    border-radius:0 0 26px 26px; color:#fff;
+  }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand img { width:46px; height:46px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,.25); }
+  .brand h1 { font-size:20px; letter-spacing:1px; }
+  .brand p { font-size:12px; opacity:.75; margin-top:2px; }
+  .today-line { margin-top:14px; font-size:12.5px; opacity:.85; }
+  .today-line b { color:#ffd28a; font-weight:600; }
+
+  /* ===== 统计卡片 ===== */
+  .stats-row {
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+    margin:-50px 14px 0; position:relative; z-index:5;
+  }
+  .stat-card {
+    background:#fff; border-radius:16px; padding:13px 8px 11px; text-align:center;
+    box-shadow:0 6px 18px rgba(10,61,115,.10);
+  }
+  .stat-card .num { font-size:24px; font-weight:800; color:#0d4f8b; line-height:1.15; }
+  .stat-card:nth-child(1) .num { color:#ff7f2a; }
+  .stat-card .lbl { font-size:11.5px; color:#7c8da0; margin-top:3px; }
+
+  .section-title {
+    display:flex; align-items:center; justify-content:space-between;
+    margin:22px 18px 12px;
+  }
+  .section-title h2 { font-size:16px; color:#274258; }
+  .section-title span { font-size:12px; color:#8b9aab; }
+
+  /* ===== 记录流 ===== */
+  #feed { padding:0 14px; display:flex; flex-direction:column; gap:16px; }
+  .card {
+    background:#fff; border-radius:18px; overflow:hidden;
+    box-shadow:0 6px 18px rgba(10,61,115,.08); cursor:pointer;
+    animation:pop .35s ease both;
+  }
+  @keyframes pop { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
+  .photo-wrap { position:relative; width:100%; aspect-ratio:1/1; background:#dce6ee; }
+  .photo-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+  .day-badge {
+    position:absolute; top:12px; left:12px;
+    background:rgba(8,30,55,.55); color:#fff; backdrop-filter:blur(4px);
+    font-size:12px; padding:5px 11px; border-radius:999px;
+  }
+  .new-badge {
+    position:absolute; top:12px; right:12px;
+    background:#ff7f2a; color:#fff; font-size:11px; font-weight:700;
+    padding:4px 10px; border-radius:999px;
+  }
+  .card-body { padding:13px 15px 14px; }
+  .card-body h3 { font-size:16.5px; color:#1c2b3a; }
+  .card-body .note { font-size:13.5px; color:#5b6b7b; margin-top:5px; line-height:1.55; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-wrap; }
+  .meta { font-size:12px; color:#8b9aab; margin-top:9px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+  .chip {
+    font-size:11.5px; color:#3d5a76; background:#eaf1f8;
+    padding:4px 10px; border-radius:999px; max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .empty { text-align:center; padding:44px 20px 30px; color:#93a5b5; }
+  .empty svg { width:74px; height:74px; opacity:.5; }
+  .empty p { margin-top:10px; font-size:14px; line-height:1.7; }
+  .empty b { color:#ff7f2a; }
+
+  /* ===== 悬浮加号 ===== */
+  #fab {
+    position:fixed; right:calc(50% - 260px + 18px); bottom:calc(92px + env(safe-area-inset-bottom));
+    width:60px; height:60px; border-radius:50%; border:none; cursor:pointer; z-index:30;
+    background:linear-gradient(135deg,#ffa54a,#ff7f2a);
+    box-shadow:0 8px 22px rgba(255,127,42,.45);
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s;
+  }
+  #fab:active { transform:scale(.92); }
+  #fab svg { width:30px; height:30px; }
+  @media (max-width:520px){ #fab { right:18px; } }
+
+  /* ===== 底部导航 ===== */
+  nav {
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:520px; z-index:25;
+    background:#fff; border-top:1px solid #e3ebf2;
+    display:flex; padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  }
+  nav button {
+    flex:1; background:none; border:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-size:11px; color:#93a5b5; padding:5px 0;
+  }
+  nav button svg { width:24px; height:24px; }
+  nav button.active { color:#0d4f8b; font-weight:700; }
+
+  /* ===== 统计页 ===== */
+  #view-stats { display:none; padding:18px 14px; }
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .big-card {
+    background:#fff; border-radius:16px; padding:16px;
+    box-shadow:0 6px 18px rgba(10,61,115,.08);
+  }
+  .big-card .num { font-size:28px; font-weight:800; color:#0d4f8b; }
+  .big-card .lbl { font-size:12px; color:#7c8da0; margin-top:3px; }
+  .big-card.wide { grid-column:1/3; }
+  .big-card.accent .num { color:#ff7f2a; }
+
+  #chart { display:flex; align-items:flex-end; gap:8px; height:130px; margin-top:14px; }
+  .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; height:100%; justify-content:flex-end; }
+  .bar {
+    width:100%; max-width:34px; border-radius:8px 8px 3px 3px;
+    background:linear-gradient(180deg,#3f9be0,#1173c4); min-height:5px;
+    transition:height .4s ease;
+  }
+  .bar-col.today .bar { background:linear-gradient(180deg,#ffb066,#ff7f2a); }
+  .bar-col .cnt { font-size:11px; color:#5b6b7b; font-weight:700; }
+  .bar-col .d { font-size:10px; color:#93a5b5; }
+  .chart-title { font-size:13px; color:#5b6b7b; margin-top:16px; }
+
+  /* ===== 编辑页 ===== */
+  #sheet {
+    position:fixed; inset:0; z-index:50; background:#f2f7fb;
+    max-width:520px; margin:0 auto; overflow-y:auto;
+    transform:translateY(105%); transition:transform .3s cubic-bezier(.3,.8,.3,1);
+    visibility:hidden;
+  }
+  #sheet.open { transform:translateY(0); visibility:visible; }
+  .sheet-head {
+    position:sticky; top:0; z-index:5;
+    background:rgba(242,247,251,.92); backdrop-filter:blur(8px);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:calc(12px + env(safe-area-inset-top)) 16px 12px;
+  }
+  .sheet-head .cancel { background:none; border:none; color:#5b6b7b; font-size:15px; cursor:pointer; padding:6px 4px; }
+  .sheet-head .title { font-size:16px; font-weight:700; color:#1c2b3a; }
+  .sheet-head .save {
+    background:linear-gradient(135deg,#ffa54a,#ff7f2a); color:#fff; border:none;
+    font-size:14px; font-weight:700; padding:8px 18px; border-radius:999px; cursor:pointer;
+    box-shadow:0 4px 12px rgba(255,127,42,.4);
+  }
+  .sheet-body { padding:6px 18px calc(40px + env(safe-area-inset-bottom)); }
+  .pick {
+    position:relative; width:100%; aspect-ratio:1/1; border-radius:18px; overflow:hidden;
+    background:#dde7ef; cursor:pointer; box-shadow:0 6px 18px rgba(10,61,115,.08);
+  }
+  .pick img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pick .change {
+    position:absolute; right:12px; bottom:12px;
+    background:rgba(8,30,55,.6); color:#fff; backdrop-filter:blur(4px);
+    font-size:12.5px; padding:7px 14px; border-radius:999px;
+  }
+  .field { margin-top:16px; }
+  .field label { display:block; font-size:13px; color:#5b6b7b; margin-bottom:6px; font-weight:600; }
+  .field label em { color:#ff7f2a; font-style:normal; }
+  .field input, .field textarea {
+    width:100%; border:1.5px solid #dbe5ee; background:#fff; border-radius:12px;
+    padding:11px 13px; font-size:15px; color:#1c2b3a; font-family:inherit; outline:none;
+    transition:border .2s;
+  }
+  .field input:focus, .field textarea:focus { border-color:#3f9be0; }
+  .field textarea { min-height:88px; resize:vertical; line-height:1.6; }
+  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  #delBtn {
+    width:100%; margin-top:26px; background:#fff; border:1.5px solid #ffc9c2; color:#e04a3a;
+    font-size:15px; font-weight:700; padding:12px; border-radius:12px; cursor:pointer;
+  }
+
+  /* ===== Toast ===== */
+  #toast {
+    position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(20px); z-index:99;
+    background:rgba(20,40,60,.88); color:#fff; font-size:13.5px;
+    padding:10px 20px; border-radius:999px; opacity:0; pointer-events:none;
+    transition:all .25s; white-space:nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <img src="icon-512.png" alt="logo">
+      <div>
+        <h1>陈力奶钓</h1>
+        <p>钓鱼记录 · 一竿一世界</p>
+      </div>
+    </div>
+    <div class="today-line" id="todayLine"></div>
+  </header>
+
+  <!-- ===== 首页 ===== -->
+  <div id="view-home">
+    <div class="stats-row">
+      <div class="stat-card"><div class="num" id="stDays">375</div><div class="lbl">已钓天数</div></div>
+      <div class="stat-card"><div class="num" id="stTotal">0</div><div class="lbl">钓鱼总数</div></div>
+      <div class="stat-card"><div class="num" id="stToday">0</div><div class="lbl">今日渔获</div></div>
+    </div>
+
+    <div class="section-title"><h2>渔获记录</h2><span id="feedCount"></span></div>
+    <div id="feed"></div>
+  </div>
+
+  <!-- ===== 统计页 ===== -->
+  <div id="view-stats">
+    <div class="stats-grid">
+      <div class="big-card accent"><div class="num" id="spTotal">0</div><div class="lbl">钓鱼总数（自 2026/10/3）</div></div>
+      <div class="big-card"><div class="num" id="spDays">375</div><div class="lbl">已钓天数（从第375天起）</div></div>
+      <div class="big-card"><div class="num" id="spMonth">0</div><div class="lbl">本月渔获</div></div>
+      <div class="big-card"><div class="num" id="spRecordDays">0</div><div class="lbl">有记录天数</div></div>
+      <div class="big-card wide"><div class="num" id="spBest">0</div><div class="lbl" id="spBestLbl">单日最高纪录</div></div>
+    </div>
+    <div class="big-card" style="margin-top:12px">
+      <div class="lbl" style="margin:0 0 4px">最近 7 天渔获</div>
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <!-- 加号 -->
+  <button id="fab" aria-label="添加记录">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  </button>
+
+  <!-- 底部导航 -->
+  <nav>
+    <button class="active" data-view="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      首页
+    </button>
+    <button data-view="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+      统计
+    </button>
+  </nav>
+</div>
+
+<!-- ===== 编辑页 ===== -->
+<div id="sheet">
+  <div class="sheet-head">
+    <button class="cancel" id="sheetCancel">取消</button>
+    <div class="title" id="sheetTitle">新建记录</div>
+    <button class="save" id="sheetSave">保存</button>
+  </div>
+  <div class="sheet-body">
+    <div class="pick" id="pickBox">
+      <img id="sheetPhoto" alt="渔获照片">
+      <div class="change">换照片</div>
+    </div>
+
+    <div class="field">
+      <label>标题 <em>*</em></label>
+      <input id="fTitle" maxlength="30" placeholder="给这条鱼起个名字，如：奶鲫上岸">
+    </div>
+    <div class="field">
+      <label>解析</label>
+      <textarea id="fNote" maxlength="500" placeholder="记录这条鱼的故事：用什么饵、几目几钓、切线跑鱼……"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>钓鱼地点</label>
+        <input id="fLocation" maxlength="30" placeholder="如：村东黑坑">
+      </div>
+      <div class="field">
+        <label>天气 / 水深</label>
+        <input id="fWeather" maxlength="30" placeholder="如：晴 22°C / 1.5米">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>重量 / 大小</label>
+        <input id="fWeight" maxlength="20" placeholder="如：1.2 斤">
+      </div>
+      <div class="field">
+        <label>记录时间</label>
+        <input id="fTime" type="datetime-local">
+      </div>
+    </div>
+    <button id="delBtn" style="display:none">删除这条记录</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="fileInput" accept="image/*" style="display:none">
+
+<script>
+/* ================= 常量 ================= */
+const START = new Date(2026, 9, 3);          // 记录起始日 2026/10/3 => 第375天
+const DAY_BASE = 375;
+const STORE = 'records';
+
+/* ================= IndexedDB ================= */
+let db = null;
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('chenlinaidiao', 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id' });
+    };
+    r.onsuccess = e => { db = e.target.result; res(); };
+    r.onerror = () => rej(r.error);
+  });
+}
+const os = mode => db.transaction(STORE, mode).objectStore(STORE);
+const dbAll = () => new Promise((res, rej) => { const q = os('readonly').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => rej(q.error); });
+const dbPut = rec => new Promise((res, rej) => { const q = os('readwrite').put(rec); q.onsuccess = res; q.onerror = () => rej(q.error); });
+const dbDel = id  => new Promise((res, rej) => { const q = os('readwrite').delete(id); q.onsuccess = res; q.onerror = () => rej(q.error); });
+
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const p2 = x => String(x).padStart(2, '0');
+function dayNumOfDate(d) { return DAY_BASE + Math.floor((d - START) / 864e5); }              // d 为当天0点
+function todayZero() { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function dayNumToday() { return dayNumOfDate(todayZero()); }
+function dayNumOfTs(ts) { const d = new Date(ts); return dayNumOfDate(new Date(d.getFullYear(), d.getMonth(), d.getDate())); }
+function dayTsOf(ts) { const d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+function fmtDT(ts) { const d = new Date(ts); return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+function fmtShort(ts) { const d = new Date(ts); return `${d.getMonth() + 1}.${d.getDate()}`; }
+function toLocalInput(ts) { const d = new Date(ts); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}T${p2(d.getHours())}:${p2(d.getMinutes())}`; }
+function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+let toastTimer = null;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1800); }
+
+const urlMap = new Map();
+function urlOf(rec) {
+  if (!urlMap.has(rec.id)) {
+    try { urlMap.set(rec.id, URL.createObjectURL(rec.photo)); }
+    catch (e) { return ''; }
+  }
+  return urlMap.get(rec.id);
+}
+
+/* 图片压缩：最长边 1280，转 jpeg，失败则保留原文件 */
+async function processFile(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const max = 1280, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86));
+    if (blob && blob.size > 0) return blob;
+  } catch (e) {}
+  return file;
+}
+
+/* ================= 状态 ================= */
+let records = [];
+let sheetMode = 'new';        // 'new' | 'edit'
+let editId = null;
+let pendingBlob = null;       // 编辑页中当前照片
+
+/* ================= 渲染 ================= */
+function renderHeader() {
+  const t = todayZero();
+  $('todayLine').innerHTML = `今天是 ${t.getFullYear()}年${t.getMonth() + 1}月${t.getDate()}日 · 钓鱼第 <b>${dayNumToday()}</b> 天`;
+  $('stDays').textContent = dayNumToday();
+  $('spDays').textContent = dayNumToday();
+}
+
+function renderStats() {
+  const now = new Date();
+  const tz = todayZero().getTime();
+  const month = now.getFullYear() * 100 + (now.getMonth() + 1);
+
+  $('stTotal').textContent = records.length;
+  $('spTotal').textContent = records.length;
+  $('stToday').textContent = records.filter(r => dayTsOf(r.createdAt) === tz).length;
+  $('spMonth').textContent = records.filter(r => { const d = new Date(r.createdAt); return d.getFullYear() * 100 + d.getMonth() + 1 === month; }).length;
+  $('spRecordDays').textContent = new Set(records.map(r => dayNumOfTs(r.createdAt))).size;
+
+  const byDay = {};
+  records.forEach(r => { const k = dayTsOf(r.createdAt); byDay[k] = (byDay[k] || 0) + 1; });
+  let best = 0, bestDay = null;
+  for (const k in byDay) if (byDay[k] > best) { best = byDay[k]; bestDay = +k; }
+  $('spBest').textContent = best;
+  $('spBestLbl').textContent = best ? `单日最高纪录（${fmtShort(bestDay)} 钓了 ${best} 条）` : '单日最高纪录';
+
+  /* 最近7天柱状图 */
+  const chart = $('chart'); chart.innerHTML = '';
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(tz - i * 864e5);
+    days.push({ d, n: byDay[d.getTime()] || 0 });
+  }
+  const mx = Math.max(1, ...days.map(x => x.n));
+  days.forEach((x, i) => {
+    const col = document.createElement('div');
+    col.className = 'bar-col' + (i === 6 ? ' today' : '');
+    col.innerHTML = `<div class="cnt">${x.n || ''}</div><div class="bar" style="height:${Math.max(5, x.n / mx * 96)}%"></div><div class="d">${x.d.getMonth() + 1}.${x.d.getDate()}</div>`;
+    chart.appendChild(col);
+  });
+}
+
+function renderFeed() {
+  const feed = $('feed');
+  const sorted = [...records].sort((a, b) => b.createdAt - a.createdAt);
+  $('feedCount').textContent = sorted.length ? `共 ${sorted.length} 条` : '';
+  if (!sorted.length) {
+    feed.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#93a5b5" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M6 12c2.5-4 7-6.5 12-5.5l-2.5 4c-1.5 2.4-4 4-6.8 4.3L6 12z"/><circle cx="14.5" cy="9.5" r=".9" fill="#93a5b5"/></svg>
+      <p>还没有渔获记录<br>点右下角 <b>+</b> 拍下第一条大鱼吧</p>
+    </div>`;
+    return;
+  }
+  const tz = todayZero().getTime();
+  feed.innerHTML = sorted.map(r => {
+    const chips = [];
+    if (r.location) chips.push(`地点 ${esc(r.location)}`);
+    if (r.weather)  chips.push(esc(r.weather));
+    if (r.weight)   chips.push(`${esc(r.weight)}`);
+    return `<div class="card" data-id="${r.id}">
+      <div class="photo-wrap">
+        <img src="${urlOf(r)}" alt="${esc(r.title)}" loading="lazy">
+        <div class="day-badge">第 ${dayNumOfTs(r.createdAt)} 天</div>
+        ${dayTsOf(r.createdAt) === tz ? '<div class="new-badge">今天</div>' : ''}
+      </div>
+      <div class="card-body">
+        <h3>${esc(r.title)}</h3>
+        ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
+        <div class="meta">${fmtDT(r.createdAt)}</div>
+        ${chips.length ? `<div class="chips">${chips.map(c => `<div class="chip">${c}</div>`).join('')}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll() { renderHeader(); renderStats(); renderFeed(); }
+
+/* ================= 编辑页 ================= */
+function openSheet(mode, rec) {
+  sheetMode = mode;
+  if (mode === 'edit' && rec) {
+    editId = rec.id;
+    pendingBlob = rec.photo;
+    $('sheetTitle').textContent = '编辑记录';
+    $('fTitle').value = rec.title || '';
+    $('fNote').value = rec.note || '';
+    $('fLocation').value = rec.location || '';
+    $('fWeather').value = rec.weather || '';
+    $('fWeight').value = rec.weight || '';
+    $('fTime').value = toLocalInput(rec.createdAt);
+    $('delBtn').style.display = 'block';
+  } else {
+    editId = null;
+    $('sheetTitle').textContent = '新建记录';
+    $('fTitle').value = ''; $('fNote').value = ''; $('fLocation').value = '';
+    $('fWeather').value = ''; $('fWeight').value = '';
+    $('fTime').value = toLocalInput(Date.now());
+    $('delBtn').style.display = 'none';
+  }
+  if (sheetPhotoUrl) URL.revokeObjectURL(sheetPhotoUrl);
+  sheetPhotoUrl = pendingBlob ? URL.createObjectURL(pendingBlob) : '';
+  $('sheetPhoto').src = sheetPhotoUrl;
+  $('sheet').classList.add('open');
+  $('sheet').scrollTop = 0;
+}
+let sheetPhotoUrl = '';
+function closeSheet() { $('sheet').classList.remove('open'); }
+
+/* ================= 保存 / 删除 ================= */
+async function saveSheet() {
+  const title = $('fTitle').value.trim();
+  if (!title) { toast('先给这条鱼起个标题吧'); $('fTitle').focus(); return; }
+  if (!pendingBlob) { toast('还没有选择照片'); return; }
+  const t = $('fTime').value ? new Date($('fTime').value).getTime() : Date.now();
+  const rec = {
+    id: editId || (crypto.randomUUID ? crypto.randomUUID() : 'r' + Date.now() + Math.random().toString(36).slice(2)),
+    createdAt: isNaN(t) ? Date.now() : t,
+    photo: pendingBlob,
+    title, note: $('fNote').value.trim(),
+    location: $('fLocation').value.trim(),
+    weather: $('fWeather').value.trim(),
+    weight: $('fWeight').value.trim()
+  };
+  await dbPut(rec);
+  const old = records.find(r => r.id === rec.id);
+  if (old) {
+    const u = urlMap.get(old.id);
+    if (u) { try { URL.revokeObjectURL(u); } catch (e) {} }
+    urlMap.delete(old.id);
+  }
+  records = records.filter(r => r.id !== rec.id);
+  records.push(rec);
+  renderAll();
+  closeSheet();
+  toast(editId ? '已更新记录' : `记录成功！第 ${dayNumToday()} 天 +1 条`);
+}
+
+async function deleteRecord() {
+  if (!editId) return;
+  if (!confirm('确定删除这条记录吗？删除后无法恢复。')) return;
+  const old = records.find(r => r.id === editId);
+  await dbDel(editId);
+  if (old) { try { URL.revokeObjectURL(urlOf(old)); } catch (e) {} urlMap.delete(old.id); }
+  records = records.filter(r => r.id !== editId);
+  renderAll();
+  closeSheet();
+  toast('已删除');
+}
+
+/* ================= 事件 ================= */
+$('fab').addEventListener('click', () => {
+  pendingBlob = null;
+  $('fileInput').value = '';
+  $('fileInput').click();          // 打开相册，只能选一张
+});
+/* 选完照片：新记录则打开编辑页；编辑中换照片则只刷新预览 */
+$('fileInput').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  pendingBlob = await processFile(f);
+  if (!$('sheet').classList.contains('open')) {
+    openSheet('new');
+  } else {
+    if (sheetPhotoUrl) URL.revokeObjectURL(sheetPhotoUrl);
+    sheetPhotoUrl = URL.createObjectURL(pendingBlob);
+    $('sheetPhoto').src = sheetPhotoUrl;
+  }
+});
+
+$('pickBox').addEventListener('click', () => { $('fileInput').value = ''; $('fileInput').click(); });
+
+/* 每次点击文件选择前清空 value，保证重复选同一张图也触发 change */
+$('fileInput').addEventListener('click', function () { this.value = ''; });
+
+$('sheetCancel').addEventListener('click', closeSheet);
+$('sheetSave').addEventListener('click', saveSheet);
+$('delBtn').addEventListener('click', deleteRecord);
+
+$('feed').addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (!card) return;
+  const rec = records.find(r => r.id === card.dataset.id);
+  if (rec) openSheet('edit', rec);
+});
+
+/* 底部导航切换 */
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b === btn));
+    const v = btn.dataset.view;
+    $('view-home').style.display = v === 'home' ? 'block' : 'none';
+    $('view-stats').style.display = v === 'stats' ? 'block' : 'none';
+    $('fab').style.display = v === 'home' ? 'flex' : 'none';
+    if (v === 'stats') renderStats();
+    window.scrollTo({ top: 0 });
+  });
+});
+
+/* ================= 启动 ================= */
+(async function init() {
+  renderHeader();
+  $('stDays').textContent = dayNumToday();
+  try {
+    await openDB();
+    records = await dbAll();
+  } catch (e) {
+    toast('本地存储不可用：' + e);
+  }
+  renderAll();
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>

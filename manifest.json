@@ -1,0 +1,16 @@
+{
+  "name": "陈力奶钓",
+  "short_name": "陈力奶钓",
+  "description": "陈力奶钓 · 钓鱼记录：天数、渔获、照片与解析",
+  "start_url": "index.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a3d73",
+  "theme_color": "#0a3d73",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
